@@ -77,6 +77,8 @@
 
 ;; treemacs
 (global-set-key (kbd "s-t") 'treemacs)
+(global-set-key (kbd "s-T") 'treemacs-add-and-display-current-project-exclusively)
+(setq treemacs-follow-mode t)
 
 ;; disable annoying question modified buffers exist
 (defun my-kill-emacs ()
@@ -112,7 +114,7 @@
 (add-hook 'c++-mode-hook 'company-mode)
 (add-hook 'c++-mode-hook 'yas-minor-mode)
 (add-hook 'c++-mode-hook
-          '(lambda ()
+          #'(lambda ()
 	     (set (make-local-variable 'company-backends)
 		  '((company-files :with company-yasnippet)
 		    (company-capf :with company-yasnippet)
