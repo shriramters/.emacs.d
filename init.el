@@ -15,6 +15,7 @@
 
 ;; set default font and size
 (set-face-attribute 'default nil :font "-*-JetBrains Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
+(set-face-attribute 'default nil :height 160)
 
 ;; line numbers
 (global-display-line-numbers-mode t)
@@ -137,3 +138,6 @@
 (add-hook 'c++-mode-hook 'my-c++-mode-hook)
 
 (setq lsp-completion-provider :none)
+
+(load-theme 'timu-caribbean t)
+
