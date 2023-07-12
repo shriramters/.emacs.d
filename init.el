@@ -14,32 +14,49 @@
 (setq make-backup-files nil)
 
 ;; set default font and size
-(set-face-attribute 'default nil :font "JetbrainsMonoNF-14")
+(set-face-attribute 'default nil :font "-*-JetBrains Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
 
 ;; line numbers
 (global-display-line-numbers-mode t)
+
+
+;; disable annoying question modified buffers exist
+(defun my-kill-emacs ()
+  "save some buffers, then exit unconditionally"
+  (interactive)
+  (save-some-buffers nil t)
+  (kill-emacs))
+(global-set-key (kbd "C-x C-c") 'my-kill-emacs)
+
+
+;; quickly open init.el with C-c c
+(defun my-edit-configuration ()
+  "Open the init file."
+  (interactive)
+  (find-file user-init-file))
+
+(global-set-key (kbd "C-c c") 'my-edit-configuration)
+
 
 ;; setup Melpa
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(confirm-kill-processes nil)
- '(custom-enabled-themes '(timu-caribbean))
- '(custom-safe-themes
-   '("bc7d4cfb6d4bd7074a39f97f0b8a057c5b651c403950bbbc4ad35a609ad6268a" default))
- '(package-selected-packages
-   '(yasnippet-snippets vterm-toggle vterm timu-caribbean-theme company typescript-mode vue-mode lsp-mode nerd-icons nerd-icons-dired treemacs treemacs-nerd-icons emmet-mode js2-mode php-mode web-mode yasnippet)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+; list the packages you want
+(setq package-list '(company lsp-mode treemacs treemacs-nerd-icons timu-caribbean-theme vterm vterm-toggle yasnippet yasnippet-snippets))
+
+; activate all the packages (in particular autoloads)
+(package-initialize)
+
+; fetch the list of packages available 
+(unless package-archive-contents
+  (package-refresh-contents))
+
+; install the missing packages
+(dolist (package package-list)
+  (unless (package-installed-p package)
+    (package-install package)))
+
 
 ;; lsp-mode
 (require 'lsp-mode)
@@ -80,28 +97,12 @@
 (global-set-key (kbd "s-T") 'treemacs-add-and-display-current-project-exclusively)
 (setq treemacs-follow-mode t)
 
-;; disable annoying question modified buffers exist
-(defun my-kill-emacs ()
-  "save some buffers, then exit unconditionally"
-  (interactive)
-  (save-some-buffers nil t)
-  (kill-emacs))
-(global-set-key (kbd "C-x C-c") 'my-kill-emacs)
-
 ;; nerd-icons
 (require 'nerd-icons)
 (setq nerd-icons-font-family "JetBrainsMonoNF")
 
 (require 'treemacs-nerd-icons)
 (treemacs-load-theme "nerd-icons")
-
-;; quickly open init.el with C-c c
-(defun my-edit-configuration ()
-  "Open the init file."
-  (interactive)
-  (find-file user-init-file))
-
-(global-set-key (kbd "C-c c") 'my-edit-configuration)
 
 ;; c++ IDE
 ;; set clang path
