@@ -26,6 +26,8 @@
 ;; disable native-comp errors
 (setq native-comp-async-report-warnings-errors nil)
 
+;; set font
+(set-face-attribute 'default nil :font "-*-JetBrains Mono-regular-normal-normal-*-*-*-*-*-m-0-iso10646-1")
 ;; uncomment the next line to set font scaling. 160 means 1.6x.
 (set-face-attribute 'default nil :height 160)
 
@@ -65,8 +67,29 @@
     (insert (format "%s\n" font))))
 (global-set-key (kbd "C-c f") 'my-enumerate-fonts)
 
-;; transpose line with above
-(global-set-key (kbd "M-<up>") 'transpose-lines)
+;; windmove
+(global-set-key (kbd "M-s-<left>")  'windmove-left)
+(global-set-key (kbd "M-s-<right>") 'windmove-right)
+(global-set-key (kbd "M-s-<up>")    'windmove-up)
+(global-set-key (kbd "M-s-<down>")  'windmove-down)
+
+(defun move-line-up ()
+  "Move up the current line."
+  (interactive)
+  (transpose-lines 1)
+  (forward-line -2)
+  (indent-according-to-mode))
+
+(defun move-line-down ()
+  "Move down the current line."
+  (interactive)
+  (forward-line 1)
+  (transpose-lines 1)
+  (forward-line -1)
+  (indent-according-to-mode))
+
+(global-set-key (kbd "M-<up>")   'move-line-up)
+(global-set-key (kbd "M-<down>") 'move-line-down)
 
 ;; open terminal with C-`
 (defun my/toggle-eat-other-window ()
@@ -82,6 +105,8 @@
 
 (global-set-key (kbd "C-`") #'my/toggle-eat-other-window)
 
+(define-key prog-mode-map (kbd "C-c d") #'flymake-show-buffer-diagnostics)
+
 ;; setup Melpa
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
@@ -89,13 +114,18 @@
 ; list the packages you want
 (setq package-list '(company treemacs all-the-icons treemacs-all-the-icons
                              yasnippet doom-themes solaire-mode exec-path-from-shell
-                             eat centaur-tabs gnu-elpa-keyring-update))
+                             eat centaur-tabs gnu-elpa-keyring-update magit))
 
 ; activate all the packages (in particular autoloads)
 (package-initialize)
 
-;; macos specific
-(when (memq window-system '(mac ns x))
+(when (memq window-system '(mac ns))
+  (require 'exec-path-from-shell)
+
+  (add-to-list 'exec-path-from-shell-variables "SSH_AUTH_SOCK")
+  (add-to-list 'exec-path-from-shell-variables "GPG_TTY")
+
+  ;; Run the function to import the variables
   (exec-path-from-shell-initialize))
 
 ; fetch the list of packages available 
@@ -183,6 +213,7 @@
 (require 'eglot)
 (add-hook 'go-ts-mode-hook 'eglot-ensure)
 (setq-default go-ts-mode-indent-offset 4)
+(global-set-key (kbd "C-c e r") #'eglot-rename)
 
 ;; Optional: install eglot-format-buffer as a save hook.
 ;; The depth of -10 places this before eglot's willSave notification,
