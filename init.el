@@ -248,17 +248,13 @@
 (use-package eglot
   :ensure t
   :config
-  ;; Tell eglot which language server to use for go-ts-mode.
-  ;; NOTE: You must have 'gopls' installed and in your system's PATH.
-  ;; Install it with: go install golang.org/x/tools/gopls@latest
-  (add-to-list 'eglot-server-programs '(go-ts-mode . ("gopls")))
-  ;; Custom function to find Go project root (go.mod)
-  (defun project-find-go-module (dir)
-    (when-let ((root (locate-dominating-file dir "go.mod")))
-      (cons 'go-module root)))
-  (cl-defmethod project-root ((project (head go-module)))
-    (cdr project))
-  (add-hook 'project-find-functions #'project-find-go-module)
+  ;; Associate major modes with language server executables.
+  ;; You must have the language server installed on your system.
+  (setq eglot-server-programs
+        '((go-ts-mode . ("gopls"))
+          ;; Uncomment and customize for other languages, e.g.:
+          ;; (python-ts-mode . ("pyright"))
+          ))
   :bind (("C-c e r" . eglot-rename)))
 
 ;; Go mode using tree-sitter
@@ -267,6 +263,14 @@
   :mode ("\\.go\\'" . go-ts-mode)
   :hook ((go-ts-mode . eglot-ensure)
          (go-ts-mode . eglot-format-buffer-before-save))
+  :config
+  ;; Custom function to find Go project root (go.mod)
+  (defun project-find-go-module (dir)
+    (when-let ((root (locate-dominating-file dir "go.mod")))
+      (cons 'go-module root)))
+  (cl-defmethod project-root ((project (head go-module)))
+    (cdr project))
+  (add-hook 'project-find-functions #'project-find-go-module)
   :custom
   (go-ts-mode-indent-offset 4))
 
