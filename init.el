@@ -114,7 +114,7 @@
 ; list the packages you want
 (setq package-list '(company treemacs all-the-icons treemacs-all-the-icons
                              yasnippet doom-themes solaire-mode exec-path-from-shell
-                             eat centaur-tabs gnu-elpa-keyring-update magit))
+                             eat centaur-tabs gnu-elpa-keyring-update magit blamer))
 
 ; activate all the packages (in particular autoloads)
 (package-initialize)
@@ -137,12 +137,19 @@
   (unless (package-installed-p package)
     (package-install package)))
 
+;; centaur-tabs
 (require 'centaur-tabs)
 (centaur-tabs-mode t)
 (setq centaur-tabs-set-icons t)
 (setq centaur-tabs-plain-icons t)
 (setq centaur-tabs-set-modified-marker t)
 (setq centaur-tabs-height 32)
+
+;; blamer
+(require 'blamer)
+(with-eval-after-load 'blamer
+  (set-face-attribute 'blamer-face nil :inherit 'font-lock-comment-face :italic t))
+(global-blamer-mode 1)
 
 ;; tree-sitter
 (setq treesit-language-source-alist
