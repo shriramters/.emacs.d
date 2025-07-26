@@ -1,77 +1,34 @@
-;; MACOS caveats
-;; eat-compile-terminfo
-;; (when (memq window-system '(mac ns x))
-;;  (exec-path-from-shell-initialize))
+;;; Package Management Setup
 
-;; ANY OS Caveats
-;; all-the-icons-install-fonts
-;; treesitter-install-grammar
+;; Configure package archives.
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 
-;; disable menu on startup
-;; (menu-bar-mode -1)
+;; Initialize the package system.
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
 
-;; disable tools on startup
-(tool-bar-mode -1)
 
-;; disable scroll bar on startup
-(toggle-scroll-bar -1)
+;;; Custom Functions
 
-;; inhibit splash screen
-(setq inhibit-splash-screen t)
-
-;; disable backup and lockfiles
-(setq make-backup-files nil)
-(setq create-lockfiles nil)
-
-;; disable native-comp errors
-(setq native-comp-async-report-warnings-errors nil)
-
-;; set font
-(set-face-attribute 'default nil :font "-*-JetBrains Mono-regular-normal-normal-*-*-*-*-*-m-0-iso10646-1")
-;; uncomment the next line to set font scaling. 160 means 1.6x.
-(set-face-attribute 'default nil :height 160)
-
-;; line numbers(buffer) and column numbers(modeline)
-(global-display-line-numbers-mode t)
-(setq column-number-mode t)
-
-;; set tab-width to a reasonable 4
-(setq-default tab-width 4)
-
-;; insert spaces and not tabs
-(setq-default indent-tabs-mode nil)
-
-;; save command history
-(savehist-mode)
-
-;; disable annoying question modified buffers exist
 (defun my-kill-emacs ()
-  "save some buffers, then exit unconditionally"
+  "Save some buffers, then exit unconditionally."
   (interactive)
   (save-some-buffers nil t)
   (kill-emacs))
-(global-set-key (kbd "C-x C-c") 'my-kill-emacs)
 
-;; quickly open init.el with C-c c
 (defun my-edit-configuration ()
   "Open the init file."
   (interactive)
   (find-file user-init-file))
-(global-set-key (kbd "C-c c") 'my-edit-configuration)
 
-;; enumerate all installed fonts
 (defun my-enumerate-fonts ()
-  "Enumerate installed fonts"
+  "Enumerate installed fonts in a new buffer."
   (interactive)
-  (dolist (font (x-list-fonts "*"))
-    (insert (format "%s\n" font))))
-(global-set-key (kbd "C-c f") 'my-enumerate-fonts)
-
-;; windmove
-(global-set-key (kbd "M-s-<left>")  'windmove-left)
-(global-set-key (kbd "M-s-<right>") 'windmove-right)
-(global-set-key (kbd "M-s-<up>")    'windmove-up)
-(global-set-key (kbd "M-s-<down>")  'windmove-down)
+  (with-new-buffer "*Available Fonts*"
+    (dolist (font (x-list-fonts "*"))
+      (insert (format "%s\n" font)))))
 
 (defun move-line-up ()
   "Move up the current line."
@@ -88,143 +45,234 @@
   (forward-line -1)
   (indent-according-to-mode))
 
-(global-set-key (kbd "M-<up>")   'move-line-up)
-(global-set-key (kbd "M-<down>") 'move-line-down)
-
-;; open terminal with C-`
 (defun my/toggle-eat-other-window ()
-  "Show *eat* in the other window, or hide it if it’s already visible."
+  "Show *eat* in the other window, or hide it if it's already visible."
   (interactive)
-  (let* ((buf   (get-buffer-create "*eat*"))     ; reuse the same Eat buffer
+  (let* ((buf   (get-buffer-create "*eat*"))
          (win   (get-buffer-window buf)))
     (if win
-        ;; It’s on-screen → just close that window
         (delete-window win)
-      ;; Not visible → create (or switch to) it with the usual helper
       (eat-other-window))))
 
-(global-set-key (kbd "C-`") #'my/toggle-eat-other-window)
+(defun eglot-format-buffer-before-save ()
+  "Add a hook to format the buffer with eglot before saving."
+  (add-hook 'before-save-hook #'eglot-format-buffer -10 t))
 
-(define-key prog-mode-map (kbd "C-c d") #'flymake-show-buffer-diagnostics)
 
-;; setup Melpa
-(require 'package)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+;;; Core Emacs Configuration
 
-; list the packages you want
-(setq package-list '(company treemacs all-the-icons treemacs-all-the-icons
-                             yasnippet doom-themes solaire-mode exec-path-from-shell
-                             eat centaur-tabs gnu-elpa-keyring-update magit blamer))
+(use-package emacs
+  :init
+  ;; These settings are applied before Emacs starts up fully.
+  (setq inhibit-splash-screen t)
+  (setq make-backup-files nil)
+  (setq create-lockfiles nil)
+  (setq native-comp-async-report-warnings-errors nil)
 
-; activate all the packages (in particular autoloads)
-(package-initialize)
+  :config
+  ;; These settings are applied after Emacs is loaded.
+  ;; UI Customization
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
+  (toggle-scroll-bar -1)
 
-(when (memq window-system '(mac ns))
-  (require 'exec-path-from-shell)
+  ;; Font settings
+  (set-face-attribute 'default nil :font "-*-JetBrains Mono-regular-normal-normal-*-*-*-*-*-m-0-iso10646-1" :height 160)
 
+  ;; Editor behavior
+  (setq-default tab-width 4)
+  (setq-default indent-tabs-mode nil)
+  (setq column-number-mode t)
+  (global-display-line-numbers-mode t)
+
+  ;; Disable line numbers in specific modes
+  (dolist (mode '(org-mode-hook
+                  term-mode-hook
+                  eat-mode-hook
+                  shell-mode-hook
+                  treemacs-mode-hook
+                  eshell-mode-hook))
+    (add-hook mode (lambda() (display-line-numbers-mode 0))))
+
+  :bind (("C-x C-c" . my-kill-emacs)
+         ("C-c c" . my-edit-configuration)
+         ("C-c f" . my-enumerate-fonts)
+         ("M-<up>" . move-line-up)
+         ("M-<down>" . move-line-down)
+         ("M-s-<left>"  . windmove-left)
+         ("M-s-<right>" . windmove-right)
+         ("M-s-<up>"    . windmove-up)
+         ("M-s-<down>"  . windmove-down)
+         ("C-`" . my/toggle-eat-other-window)))
+
+
+;;; External Package Configurations
+
+;; Load theme and visual packages first to prevent white flash
+(use-package doom-themes
+  :ensure t
+  :config
+  (load-theme 'doom-tomorrow-night t)
+  (doom-themes-treemacs-config)
+  :custom
+  (doom-themes-enable-bold t)
+  (doom-themes-enable-italic t)
+  (doom-themes-treemacs-theme "doom-atom"))
+
+(use-package solaire-mode
+  :ensure t
+  :config
+  (solaire-global-mode +1))
+
+;; Show git blame info in the fringe
+(use-package blamer
+  :ensure t
+  :after doom-themes ;; Ensure the theme is loaded before configuring the face
+  :config
+  (set-face-attribute 'blamer-face nil :inherit 'font-lock-comment-face :italic t)
+  (global-blamer-mode 1))
+
+;; Save command history across sessions
+(use-package savehist
+  :ensure t
+  :config
+  (savehist-mode 1))
+
+;; Ensure shell environment variables are available in Emacs on macOS
+(use-package exec-path-from-shell
+  :ensure t
+  :if (memq window-system '(mac ns))
+  :config
   (add-to-list 'exec-path-from-shell-variables "SSH_AUTH_SOCK")
   (add-to-list 'exec-path-from-shell-variables "GPG_TTY")
-
-  ;; Run the function to import the variables
   (exec-path-from-shell-initialize))
 
-; fetch the list of packages available 
-(unless package-archive-contents
-  (package-refresh-contents))
+;; A powerful Git client
+(use-package magit
+  :ensure t)
 
-; install the missing packages
-(dolist (package package-list)
-  (unless (package-installed-p package)
-    (package-install package)))
+;; A modern tab bar
+(use-package centaur-tabs
+  :ensure t
+  :config
+  (centaur-tabs-mode t)
+  :custom
+  (centaur-tabs-set-icons t)
+  (centaur-tabs-plain-icons t)
+  (centaur-tabs-set-modified-marker t)
+  (centaur-tabs-height 32))
 
-;; centaur-tabs
-(require 'centaur-tabs)
-(centaur-tabs-mode t)
-(setq centaur-tabs-set-icons t)
-(setq centaur-tabs-plain-icons t)
-(setq centaur-tabs-set-modified-marker t)
-(setq centaur-tabs-height 32)
+;; Provides icons for many packages
+(use-package all-the-icons
+  :ensure t)
 
-;; blamer
-(require 'blamer)
-(with-eval-after-load 'blamer
-  (set-face-attribute 'blamer-face nil :inherit 'font-lock-comment-face :italic t))
-(global-blamer-mode 1)
+;; A file and project explorer tree
+(use-package treemacs
+  :ensure t
+  :defer t
+  :config
+  (setq treemacs-follow-mode t)
+  :bind
+  (("s-t" . treemacs)
+   ("s-T" . treemacs-add-and-display-current-project-exclusively)))
 
-;; tree-sitter
-(setq treesit-language-source-alist
- '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-   (cmake "https://github.com/uyha/tree-sitter-cmake")
-   (css "https://github.com/tree-sitter/tree-sitter-css")
-   (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-   (go "https://github.com/tree-sitter/tree-sitter-go")
-   (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
-   (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-   (html "https://github.com/tree-sitter/tree-sitter-html")
-   (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-   (json "https://github.com/tree-sitter/tree-sitter-json")
-   (make "https://github.com/alemuller/tree-sitter-make")
-   (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-   (python "https://github.com/tree-sitter/tree-sitter-python")
-   (toml "https://github.com/tree-sitter/tree-sitter-toml")
-   (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-   (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-   (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+;; Icon integration for treemacs
+(use-package treemacs-all-the-icons
+  :ensure t
+  :after treemacs
+  :config
+  (treemacs-load-theme "all-the-icons"))
 
-;; treemacs
-(global-set-key (kbd "s-t") 'treemacs)
-(global-set-key (kbd "s-T") 'treemacs-add-and-display-current-project-exclusively)
-(setq treemacs-follow-mode t)
-(require 'treemacs-all-the-icons)
-(treemacs-load-theme "all-the-icons")
+;; Snippet expansion engine
+(use-package yasnippet
+  :ensure t)
 
-;; disable line numbers for certain modes
-(dolist (mode '(org-mode-hook
-                term-mode-hook
-                eat-mode-hook
-                shell-mode-hook
-                treemacs-mode-hook
-                eshell-mode-hook))
-  (add-hook mode (lambda() (display-line-numbers-mode 0))))
+;; Text completion framework
+(use-package company
+  :ensure t
+  :hook (after-init . global-company-mode))
 
-;; themeing
-(require 'doom-themes)
-(load-theme 'doom-tomorrow-night t)
-;;(load-theme 'doom-homage-black t)
-(solaire-global-mode +1)
-(setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-      doom-themes-enable-italic t)
-  (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
-  (doom-themes-treemacs-config)
+;; A mode for Google's Protocol Buffers
+(use-package protobuf-mode
+  :ensure t)
 
-;; company mode
-(require 'company)
-(add-hook 'after-init-hook 'global-company-mode)
+;; An Emacs terminal emulator
+(use-package eat
+  :ensure t)
 
-;; go-eglot
-(require 'project)
-(defun project-find-go-module (dir)
-  (when-let ((root (locate-dominating-file dir "go.mod")))
-    (cons 'go-module root)))
+;; Keeps the GPG keyring for ELPA up to date
+(use-package gnu-elpa-keyring-update
+  :ensure t)
 
-(cl-defmethod project-root ((project (head go-module)))
-  (cdr project))
 
-(add-hook 'project-find-functions #'project-find-go-module)
+;;; Programming Language and Tooling Setup
 
-;; Optional: load other packages before eglot to enable eglot integrations.
-(require 'company)
-(require 'yasnippet)
+;; Tree-sitter for more advanced syntax parsing
+(use-package treesit
+  :config
+  ;; NOTE: You must manually install the language grammars for tree-sitter.
+  ;; Run M-x treesit-install-language-grammar and select the language (e.g., 'go').
+  ;; This is a one-time setup step per language.
+  (setq treesit-language-source-alist
+   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (cmake "https://github.com/uyha/tree-sitter-cmake")
+     (css "https://github.com/tree-sitter/tree-sitter-css")
+     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+     (go "https://github.com/tree-sitter/tree-sitter-go")
+     (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+     (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+     (html "https://github.com/tree-sitter/tree-sitter-html")
+     (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+     (json "https://github.com/tree-sitter/tree-sitter-json")
+     (make "https://github.com/alemuller/tree-sitter-make")
+     (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+     (python "https://github.com/tree-sitter/tree-sitter-python")
+     (toml "https://github.com/tree-sitter/tree-sitter-toml")
+     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+     (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+     (proto "https://github.com/mitchellh/tree-sitter-proto"))))
 
-(require 'go-ts-mode)
-(require 'eglot)
-(add-hook 'go-ts-mode-hook 'eglot-ensure)
-(setq-default go-ts-mode-indent-offset 4)
-(global-set-key (kbd "C-c e r") #'eglot-rename)
+;; Org mode configuration
+(use-package org
+  :config
+  ;; Enable beamer export for presentations
+  (require 'ox-beamer))
 
-;; Optional: install eglot-format-buffer as a save hook.
-;; The depth of -10 places this before eglot's willSave notification,
-;; so that that notification reports the actual contents that will be saved.
-(defun eglot-format-buffer-before-save ()
-(add-hook 'before-save-hook #'eglot-format-buffer -10 t))
-(add-hook 'go-ts-mode-hook #'eglot-format-buffer-before-save)
+;; Flymake diagnostics keybinding
+(use-package flymake
+  :bind (:map prog-mode-map
+              ("C-c d" . flymake-show-buffer-diagnostics)))
+
+;; Language Server Protocol client
+(use-package eglot
+  :ensure t
+  :config
+  ;; Tell eglot which language server to use for go-ts-mode.
+  ;; NOTE: You must have 'gopls' installed and in your system's PATH.
+  ;; Install it with: go install golang.org/x/tools/gopls@latest
+  (add-to-list 'eglot-server-programs '(go-ts-mode . ("gopls")))
+  ;; Custom function to find Go project root (go.mod)
+  (defun project-find-go-module (dir)
+    (when-let ((root (locate-dominating-file dir "go.mod")))
+      (cons 'go-module root)))
+  (cl-defmethod project-root ((project (head go-module)))
+    (cdr project))
+  (add-hook 'project-find-functions #'project-find-go-module)
+  :bind (("C-c e r" . eglot-rename)))
+
+;; Go mode using tree-sitter
+(use-package go-ts-mode
+  :ensure t
+  :mode ("\\.go\\'" . go-ts-mode)
+  :hook ((go-ts-mode . eglot-ensure)
+         (go-ts-mode . eglot-format-buffer-before-save))
+  :custom
+  (go-ts-mode-indent-offset 4))
+
+
+;;; Finalization
+
+;; Prevent Emacs from writing customizations to this file.
+;; All configuration should be managed with use-package.
+(setq custom-file (make-temp-file "emacs-custom-"))
