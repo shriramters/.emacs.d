@@ -274,9 +274,39 @@
   :custom
   (go-ts-mode-indent-offset 4))
 
+;;; Debug Adapter Protocol client
+(use-package dape
+  :ensure t
+  :commands (dape)
+  :config
+  ;; C++ configuration using GDB
+  (add-to-list 'dape-configs
+               '(gdb-debug
+                 :modes (c-mode c++-mode)
+                 :command "gdb"
+                 :command-args '("--interpreter=dap")
+                 :request "launch"
+                 :type "cppdbg"
+                 :cwd dape-cwd
+                 :program (lambda () (read-file-name "Path to executable: " dape-cwd))
+                 :stopOnEntry t))
+
+  ;; Go configuration using Delve
+  (add-to-list 'dape-configs
+               '(go-dlv-debug
+                 :modes (go-mode)
+                 :command "dlv"
+                 :command-args '("dap")
+                 :request "launch"
+                 :type "go"
+                 :cwd dape-cwd
+                 :program "${fileDirname}")))
+
 
 ;;; Finalization
 
 ;; Prevent Emacs from writing customizations to this file.
 ;; All configuration should be managed with use-package.
 (setq custom-file (make-temp-file "emacs-custom-"))
+
+;;; End of init.el
