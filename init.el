@@ -77,8 +77,9 @@
   ;; UI Customization
   (tool-bar-mode -1)
   (menu-bar-mode -1)
-  (toggle-scroll-bar -1)
-
+  ;; Set default frame parameters for all new frames
+  (add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
+  
   ;; Font settings
   (if (find-font (font-spec :name "JetBrainsMono Nerd Font Mono"))
     (set-face-attribute 'default nil :family "JetBrainsMono Nerd Font Mono")
