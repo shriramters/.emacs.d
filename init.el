@@ -119,11 +119,12 @@
   :ensure t
   :config
   (load-theme 'doom-tomorrow-night t)
-  (doom-themes-treemacs-config)
+  ;; (doom-themes-treemacs-config) ;; DISABLED to prevent override
   :custom
   (doom-themes-enable-bold t)
   (doom-themes-enable-italic t)
-  (doom-themes-treemacs-theme "doom-atom"))
+  ;; (doom-themes-treemacs-theme "doom-atom") ;; DISABLED to prevent override
+  )
 
 (use-package solaire-mode
   :ensure t
@@ -190,7 +191,7 @@
 ;; Icon integration for treemacs
 (use-package treemacs-all-the-icons
   :ensure t
-  :after treemacs
+  :after (treemacs all-the-icons)
   :config
   (treemacs-load-theme "all-the-icons"))
 
