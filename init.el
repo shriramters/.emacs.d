@@ -26,9 +26,12 @@
 (defun my-enumerate-fonts ()
   "Enumerate installed fonts in a new buffer."
   (interactive)
-  (with-new-buffer "*Available Fonts*"
-    (dolist (font (x-list-fonts "*"))
-      (insert (format "%s\n" font)))))
+  (let ((font-buffer (get-buffer-create "*Available Fonts*")))
+    (with-current-buffer font-buffer
+      (erase-buffer)
+      (dolist (font (x-list-fonts "*"))
+        (insert (format "%s\n" font)))
+      (display-buffer font-buffer))))
 
 (defun move-line-up ()
   "Move up the current line."
@@ -77,7 +80,10 @@
   (toggle-scroll-bar -1)
 
   ;; Font settings
-  (set-face-attribute 'default nil :font "-*-JetBrains Mono-regular-normal-normal-*-*-*-*-*-m-0-iso10646-1" :height 160)
+  (if (find-font (font-spec :name "JetBrainsMono Nerd Font Mono"))
+    (set-face-attribute 'default nil :family "JetBrainsMono Nerd Font Mono")
+    (message "JetBrainsMono Nerd Font Mono font not found, using default."))
+  (add-to-list 'default-frame-alist '(font . "JetBrainsMono Nerd Font Mono"))
 
   ;; Editor behavior
   (setq-default tab-width 4)
@@ -164,7 +170,12 @@
 
 ;; Provides icons for many packages
 (use-package all-the-icons
-  :ensure t)
+  :ensure t
+  :if (display-graphic-p)
+  :config
+  ;; Check if the font is findable by Emacs before trying to install.
+  (unless (find-font (font-spec :name "all-the-icons"))
+    (all-the-icons-install-fonts)))
 
 ;; A file and project explorer tree
 (use-package treemacs
@@ -231,7 +242,11 @@
      (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
      (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
      (yaml "https://github.com/ikatyang/tree-sitter-yaml")
-     (proto "https://github.com/mitchellh/tree-sitter-proto"))))
+     (proto "https://github.com/mitchellh/tree-sitter-proto")))
+  ;; Loop through the list and install any missing grammars.
+  (dolist (lang (mapcar #'car treesit-language-source-alist))
+    (unless (treesit-language-available-p lang)
+      (treesit-install-language-grammar lang))))
 
 ;; Org mode configuration
 (use-package org
