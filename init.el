@@ -90,16 +90,9 @@
   (setq-default tab-width 4)
   (setq-default indent-tabs-mode nil)
   (setq column-number-mode t)
-  (global-display-line-numbers-mode t)
 
-  ;; Disable line numbers in specific modes
-  (dolist (mode '(org-mode-hook
-                  term-mode-hook
-                  eat-mode-hook
-                  shell-mode-hook
-                  treemacs-mode-hook
-                  eshell-mode-hook))
-    (add-hook mode (lambda() (display-line-numbers-mode 0))))
+  ;; Only display line numbers in prog-modes
+  (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
   :bind (("C-x C-c" . my-kill-emacs)
          ("C-c c" . my-edit-configuration)
@@ -205,10 +198,6 @@
   :ensure t
   :hook (after-init . global-company-mode))
 
-;; A mode for Google's Protocol Buffers
-(use-package protobuf-mode
-  :ensure t)
-
 ;; An Emacs terminal emulator
 (use-package eat
   :ensure t)
@@ -216,7 +205,6 @@
 ;; Keeps the GPG keyring for ELPA up to date
 (use-package gnu-elpa-keyring-update
   :ensure t)
-
 
 ;;; Programming Language and Tooling Setup
 
@@ -256,6 +244,10 @@
   ;; Enable beamer export for presentations
   (require 'ox-beamer))
 
+;; Code block syntax highlighting for org html exports
+(use-package htmlize
+  :ensure t)
+
 ;; Flymake diagnostics keybinding
 (use-package flymake
   :bind (:map prog-mode-map
@@ -290,6 +282,20 @@
   (add-hook 'project-find-functions #'project-find-go-module)
   :custom
   (go-ts-mode-indent-offset 4))
+
+;; Explicitly set major modes for languages not
+;; built into emacs yet or auto-mode yet
+(use-package yaml-ts-mode
+  :ensure t
+  :mode ("\\.ya?ml\\'" . yaml-ts-mode))
+
+(use-package markdown-ts-mode
+  :ensure t
+  :mode ("\\.md\\'" . markdown-ts-mode))
+
+(use-package protobuf-ts-mode
+  :ensure t
+  :mode ("\\.proto\\'" . protobuf-ts-mode))
 
 ;;; Debug Adapter Protocol client
 (use-package dape
