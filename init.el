@@ -216,7 +216,9 @@
   ;; This is a one-time setup step per language.
   (setq treesit-language-source-alist
    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (c "https://github.com/tree-sitter/tree-sitter-c")
      (cmake "https://github.com/uyha/tree-sitter-cmake")
+     (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
      (css "https://github.com/tree-sitter/tree-sitter-css")
      (elisp "https://github.com/Wilfred/tree-sitter-elisp")
      (go "https://github.com/tree-sitter/tree-sitter-go")
@@ -262,11 +264,16 @@
   ;; You must have the language server installed on your system.
   (setq eglot-server-programs
         '((go-ts-mode . ("gopls"))
+          (c++-ts-mode . ("clangd"))
           ;; Uncomment and customize for other languages, e.g.:
           ;; (python-ts-mode . ("pyright"))
           ))
   :bind (("C-c e r" . eglot-rename)))
 
+
+;; Explicitly set major modes for languages not
+;; built into emacs yet or auto-mode yet
+;;
 ;; Go mode using tree-sitter
 (use-package go-ts-mode
   :ensure t
@@ -284,8 +291,6 @@
   :custom
   (go-ts-mode-indent-offset 4))
 
-;; Explicitly set major modes for languages not
-;; built into emacs yet or auto-mode yet
 (use-package yaml-ts-mode
   :ensure t
   :mode ("\\.ya?ml\\'" . yaml-ts-mode))
@@ -297,6 +302,27 @@
 (use-package protobuf-ts-mode
   :ensure t
   :mode ("\\.proto\\'" . protobuf-ts-mode))
+
+;; Add hooks for eglot in c++-ts-mode
+(add-hook 'c++-ts-mode-hook #'eglot-ensure)
+(add-hook 'c++-ts-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
+
+;; Add c++ extensions to use c++-ts-mode
+(add-to-list 'auto-mode-alist '("\\.cpp\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.cxx\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.cc\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.hpp\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.hh\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.c\\'" . c-ts-mode))
+
+;; Add hooks for eglot in c-ts-mode
+(add-hook 'c-ts-mode-hook #'eglot-ensure)
+(add-hook 'c-ts-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
 
 ;;; Debug Adapter Protocol client
 (use-package dape
